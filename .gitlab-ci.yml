@@ -46,7 +46,7 @@ publish_rpm:
     - >-
       curl -f -u "${USERNAME}:${PASSWORD}"
       --upload-file ./rpms/RPMS/noarch/check_fortiwlc_ap-*.noarch.rpm
-      https://nekaj.si./noarch/
+      https://nekaj.si/noarch/
   only:
     - master
 
