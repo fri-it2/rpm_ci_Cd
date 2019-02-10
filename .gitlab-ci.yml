@@ -1,0 +1,53 @@
+stages:
+  - build
+  - test1
+  - publish
+
+build_package:
+  stage: build
+  image: nekaj.si:5000/nekaj/rpmbuild:7
+  script:
+    - ./build.sh
+  # Save RPMs as artifacts
+  artifacts:
+    expire_in: 1 day
+    paths:
+    - rpms/
+
+test_code:
+  stage: test1
+  image: nekaj.si:5000/nekaj/centos:7
+  script:
+    - yum install -y python-pip
+    - pip install responses
+    - yum install -y  pynag
+    - python --version
+    - python test_forti_api.py
+
+test_rpm:
+  stage: test1
+  image: nekaj.si:5000/nekaj/centos:7
+  script:
+    - rpm --import https://packages.icinga.com/icinga.key
+    - yum install -y https://packages.icinga.com/epel/icinga-rpm-release-7-latest.noarch.rpm
+    - yum install -y icinga2
+    - ls -lR
+    - yum install -y rpms/RPMS/noarch/check_fortiwlc_ap-*.noarch.rpm
+    - ls -l /opt/monitoring/icinga/check_fortiwlc_ap.py
+    - ls -l /etc/icinga2/conf.d/check_commands/check_fortiwlc_ap.conf
+    - icinga2 --version
+    - icinga2 daemon -C
+
+publish_rpm:
+  image: nekaj.si:5000/nekaj/centos:7
+  stage: publish
+  script:
+    - ls -lR ./rpms/
+    - >-
+      curl -f -u "${USERNAME}:${PASSWORD}"
+      --upload-file ./rpms/RPMS/noarch/check_fortiwlc_ap-*.noarch.rpm
+      https://nekaj.si./noarch/
+  only:
+    - master
+
+
